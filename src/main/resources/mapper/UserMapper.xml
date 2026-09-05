@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.mapper.UserMapper">
+
+    <!-- 通用结果映射 -->
+    <resultMap id="BaseResultMap" type="com.inventory.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <!-- 1. 根据 ID 查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, username, password, email, phone, status, created_at, updated_at, deleted
+        FROM user
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 2. 根据用户名查询 -->
+    <select id="selectByUsername" resultMap="BaseResultMap">
+        SELECT id, username, password, email, phone, status, created_at, updated_at, deleted
+        FROM user
+        WHERE username = #{username} AND deleted = 0
+    </select>
+
+    <!-- 3. 分页条件查询（配合 PageHelper） -->
+    <select id="selectUserList" resultMap="BaseResultMap">
+        SELECT id, username, password, email, phone, status, created_at, updated_at, deleted
+        FROM user
+        WHERE deleted = 0
+        <if test="username != null and username != ''">
+            AND username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 4. 新增（useGeneratedKeys 回填 ID） -->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (username, password, email, phone, status)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{status})
+    </insert>
+
+    <!-- 5. 更新 -->
+    <update id="updateUser">
+        UPDATE user
+        SET username = #{username},
+            password = #{password},
+            email = #{email},
+            phone = #{phone},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 6. 逻辑删除 -->
+    <update id="deleteById">
+        UPDATE user SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>
