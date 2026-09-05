@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/inventory_db?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 9999dy   # 改成你的密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# ========== 标准 MyBatis 配置 ==========
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.inventory.*.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# ========== PageHelper 分页配置 ==========
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  # ========== JWT 配置 ==========
+jwt:
+    secret: mySecretKeyForInventorySystem1234567890!@#  # 至少32位
+    expiration: 7200000   # 2小时（毫秒）
