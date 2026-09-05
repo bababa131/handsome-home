@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import router from '../router'
 
 const request = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: '',
     timeout: 10000
 })
 
