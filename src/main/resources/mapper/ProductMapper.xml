@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.mapper.ProductMapper">
+
+    <resultMap id="BaseResultMap" type="com.inventory.entity.Product">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="status" property="status"/>
+        <result column="price" property="price"/>
+        <result column="stock" property="stock"/>
+        <result column="warn_threshold" property="warnThreshold"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Columns">
+        id, name, category_id, status, price, stock, warn_threshold, created_at, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Columns"/>
+        FROM product WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 核心：多条件组合查询 -->
+    <select id="selectProductList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Columns"/>
+        FROM product
+        WHERE deleted = 0
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null">
+            AND created_at &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_at &lt;= #{endTime}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product (name, category_id, status, price, stock, warn_threshold)
+        VALUES (#{name}, #{categoryId}, #{status}, #{price}, #{stock}, #{warnThreshold})
+    </insert>
+
+    <update id="updateProduct">
+        UPDATE product
+        SET name = #{name}, category_id = #{categoryId}, status = #{status},
+            price = #{price}, warn_threshold = #{warnThreshold}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteById">
+        UPDATE product SET deleted = 1 WHERE id = #{id}
+    </update>
+
+    <!-- 乐观锁核心：stock >= quantity 条件，并发下只有一个请求能成功 -->
+    <update id="deductStock">
+        UPDATE product
+        SET stock = stock - #{quantity}, updated_at = NOW()
+        WHERE id = #{productId} AND deleted = 0 AND stock &gt;= #{quantity}
+    </update>
+
+    <update id="addStock">
+        UPDATE product
+        SET stock = stock + #{quantity}, updated_at = NOW()
+        WHERE id = #{productId} AND deleted = 0
+    </update>
+    <select id="selectLowStockList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Columns"/>
+        FROM product
+        WHERE deleted = 0 AND stock &lt;= warn_threshold
+        ORDER BY stock ASC
+    </select>
+</mapper>
