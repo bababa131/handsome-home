@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.mapper.StockOrderMapper">
+
+    <resultMap id="OrderWithItems" type="com.inventory.entity.StockOrder">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="type" property="type"/>
+        <result column="operator" property="operator"/>
+        <result column="remark" property="remark"/>
+        <result column="created_at" property="createdAt"/>
+        <collection property="items" ofType="com.inventory.entity.StockOrderItem">
+            <id column="item_id" property="id"/>
+            <result column="product_id" property="productId"/>
+            <result column="quantity" property="quantity"/>
+        </collection>
+    </resultMap>
+
+    <!-- 主表插入，回填自增ID（明细要靠它关联） -->
+    <insert id="insertOrder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stock_order (order_no, type, operator, remark)
+        VALUES (#{orderNo}, #{type}, #{operator}, #{remark})
+    </insert>
+
+    <!-- 明细批量插入 -->
+    <insert id="insertItems">
+        INSERT INTO stock_order_item (order_id, product_id, quantity) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.orderId}, #{item.productId}, #{item.quantity})
+        </foreach>
+    </insert>
+
+    <!-- 详情：主表 LEFT JOIN 明细，collection 自动聚合 -->
+    <select id="selectById" resultMap="OrderWithItems">
+        SELECT o.id, o.order_no, o.type, o.operator, o.remark, o.created_at,
+               i.id AS item_id, i.product_id, i.quantity
+        FROM stock_order o
+                 LEFT JOIN stock_order_item i ON i.order_id = o.id
+        WHERE o.id = #{id}
+    </select>
+
+    <select id="selectOrderList" resultType="com.inventory.entity.StockOrder">
+        SELECT id, order_no AS orderNo, type, operator, remark, created_at AS createdAt
+        FROM stock_order
+        <where>
+            <if test="type != null"> type = #{type} </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.inventory.mapper.StockTakeMapper">
+
+    <resultMap id="TakeWithItems" type="com.inventory.entity.StockTake">
+        <id column="id" property="id"/>
+        <result column="take_no" property="takeNo"/>
+        <result column="status" property="status"/>
+        <result column="operator" property="operator"/>
+        <result column="remark" property="remark"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="finished_at" property="finishedAt"/>
+        <collection property="items" ofType="com.inventory.entity.StockTakeItem">
+            <id column="item_id" property="id"/>
+            <result column="product_id" property="productId"/>
+            <result column="product_name" property="productName"/>
+            <result column="system_qty" property="systemQty"/>
+            <result column="actual_qty" property="actualQty"/>
+            <result column="diff_qty" property="diffQty"/>
+        </collection>
+    </resultMap>
+
+    <insert id="insertTake" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stock_take (take_no, status, operator, remark)
+        VALUES (#{takeNo}, #{status}, #{operator}, #{remark})
+    </insert>
+
+    <insert id="insertItems">
+        INSERT INTO stock_take_item (take_id, product_id, system_qty) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.takeId}, #{item.productId}, #{item.systemQty})
+        </foreach>
+    </insert>
+
+    <select id="selectById" resultMap="TakeWithItems">
+        SELECT t.id, t.take_no, t.status, t.operator, t.remark, t.created_at, t.finished_at,
+               i.id AS item_id, i.product_id, p.name AS product_name,
+               i.system_qty, i.actual_qty, i.diff_qty
+        FROM stock_take t
+                 LEFT JOIN stock_take_item i ON i.take_id = t.id
+                 LEFT JOIN product p ON p.id = i.product_id
+        WHERE t.id = #{id}
+    </select>
+
+    <select id="selectTakeList" resultType="com.inventory.entity.StockTake">
+        SELECT id, take_no AS takeNo, status, operator, remark,
+               created_at AS createdAt, finished_at AS finishedAt
+        FROM stock_take ORDER BY created_at DESC
+    </select>
+
+    <select id="selectItemsByTakeId" resultType="com.inventory.entity.StockTakeItem">
+        SELECT id, take_id AS takeId, product_id AS productId,
+               system_qty AS systemQty, actual_qty AS actualQty, diff_qty AS diffQty
+        FROM stock_take_item WHERE take_id = #{takeId}
+    </select>
+
+    <update id="updateItemActual">
+        UPDATE stock_take_item
+        SET actual_qty = #{actualQty}, diff_qty = #{diffQty}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE stock_take
+        SET status = #{status},
+            finished_at = CASE WHEN #{status} > 0 THEN NOW() ELSE finished_at END
+        WHERE id = #{id}
+    </update>
+
+</mapper>
